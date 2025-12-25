@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RotinaMaster - Sistema de Gerenciamento de Rotinas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b9ac4;
+            --accent-color: #97d8c4;
+            --light-color: #f5f7fa;
+            --dark-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-theme {
+            --primary-color: #5d8cc5;
+            --secondary-color: #7ab0e0;
+            --accent-color: #a5e8d5;
+            --light-color: #1a2530;
+            --dark-color: #ecf0f1;
+            --success-color: #27ae60;
+            --warning-color: #e67e22;
+            --danger-color: #c0392b;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            transition: var(--transition);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .theme-toggle {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            transition: var(--transition);
+            box-shadow: var(--box-shadow);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-modal.active {
+            display: flex;
+        }
+
+        .auth-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-theme .auth-container {
+            background-color: #223344;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #777;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .auth-tab.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .auth-form h3 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panels */
+        .panel {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .dark-theme .panel {
+            background-color: #223344;
+        }
+
+        .panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Routine Creation */
+        .routine-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: white;
+            color: var(--dark-color);
+        }
+
+        .dark-theme .form-group input,
+        .dark-theme .form-group select,
+        .dark-theme .form-group textarea {
+            background-color: #2c3e50;
+            border-color: #3a506b;
+            color: white;
+        }
+
+        .form-group input:focus, 
+        .form-group select:focus, 
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+
+        .color-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .color-option.active {
+            border-color: var(--dark-color);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary {
+            background-color: #eee;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #ddd;
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        /* Calendar */
+        .calendar-container {
+            margin-bottom: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h3 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+
+        .calendar-nav button {
+            background-color: transparent;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .calendar-nav button:hover {
+            background-color: rgba(74, 111, 165, 0.1);
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calendar-day {
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary-color);
+            padding: 10px 0;
+        }
+
+        .calendar-date {
+            height: 100px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark-theme .calendar-date {
+            border-color: #3a506b;
+        }
+
+        .calendar-date:hover {
+            background-color: rgba(74, 111, 165, 0.05);
+        }
+
+        .calendar-date.active {
+            background-color: rgba(74, 111, 165, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .date-number {
+            font-weight: 600;
+            margin-bottom: 5px;
+            align-self: flex-end;
+        }
+
+        .event-indicator {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            margin-top: auto;
+        }
+
+        /* Routine List */
+        .routine-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .routine-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 5px solid var(--primary-color);
+            transition: var(--transition);
+            background-color: rgba(74, 111, 165, 0.05);
+        }
+
+        .dark-theme .routine-item {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .routine-item:hover {
+            transform: translateX(5px);
+        }
+
+        .routine-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .routine-details {
+            flex-grow: 1;
+        }
+
+        .routine-details h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .routine-time {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .dark-theme .routine-time {
+            color: #aaa;
+        }
+
+        .routine-actions button {
+            background-color: transparent;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .routine-actions button:hover {
+            color: var(--secondary-color);
+        }
+
+        /* Statistics */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .dark-theme .stat-card {
+            background-color: #223344;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .stat-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: var(--dark-color);
+        }
+
+        .stat-card p {
+            color: #666;
+        }
+
+        .dark-theme .stat-card p {
+            color: #aaa;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 50px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            color: #666;
+        }
+
+        .dark-theme footer {
+            color: #aaa;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .dark-theme .modal-content {
+            background-color: #223344;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--dark-color);
+            cursor: pointer;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .main-content {
+                gap: 20px;
+            }
+            
+            .panel {
+                padding: 20px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .calendar-date {
+                height: 70px;
+                padding: 5px;
+            }
+            
+            .user-section {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 10px;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="light-theme">
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Entrar</button>
+                <button class="auth-tab" data-tab="register">Registrar</button>
+            </div>
+            
+            <div class="auth-form active" id="loginForm">
+                <h3>Entrar na sua conta</h3>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Senha</label>
+                        <input type="password" id="loginPassword" required placeholder="Sua senha">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                        <span id="loginBtnText">Entrar</span>
+                        <span class="loading hidden" id="loginLoading"></span>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="auth-form" id="registerForm">
+                <h3>Criar nova conta</h3>
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label for="registerName">Nome</label>
+                        <input type="text" id="registerName" required placeholder="Seu nome">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Senha</label>
+                        <input type="password" id="registerPassword" required placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+                        <span id="registerBtnText">Registrar</span>
+                        <span class="loading hidden" id="registerLoading"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-calendar-alt"></i>
+                <h1>RotinaMaster</h1>
+            </div>
+            <div class="user-section">
+                <div class="user-info" id="userInfo">
+                    <div class="user-avatar" id="userAvatar">?</div>
+                    <span id="userName">Visitante</span>
+                </div>
+                <button class="btn btn-secondary btn-small" id="authBtn">Entrar</button>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="panel routine-form">
+                    <h2><i class="fas fa-plus-circle"></i> Criar Nova Rotina</h2>
+                    <form id="routineForm">
+                        <div class="form-group">
+                            <label for="routineName">Nome da Rotina</label>
+                            <input type="text" id="routineName" placeholder="Ex: Academia, Estudo, Trabalho" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="routineType">Tipo de Rotina</label>
+                            <select id="routineType">
+                                <option value="diaria">Diária</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="personalizada">Personalizada</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Horário</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="time" id="startTime" required style="flex: 1;">
+                                <span style="display: flex; align-items: center;">até</span>
+                                <input type="time" id="endTime" required style="flex: 1;">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="routineDescription">Descrição</label>
+                            <textarea id="routineDescription" rows="3" placeholder="Detalhes da rotina..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Cor de Identificação</label>
+                            <div class="color-selector">
+                                <div class="color-option active" style="background-color: #4a6fa5;" data-color="#4a6fa5"></div>
+                                <div class="color-option" style="background-color: #6b9ac4;" data-color="#6b9ac4"></div>
+                                <div class="color-option" style="background-color: #97d8c4;" data-color="#97d8c4"></div>
+                                <div class="color-option" style="background-color: #f39c12;" data-color="#f39c12"></div>
+                                <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c"></div>
+                                <div class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6"></div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block" id="saveRoutineBtn">
+                            <i class="fas fa-save"></i> Salvar Rotina
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="panel" style="margin-top: 30px;">
+                    <h2><i class="fas fa-chart-pie"></i> Estatísticas</h2>
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <i class="fas fa-tasks"></i>
+                            <h3 id="totalRoutines">0</h3>
+                            <p>Rotinas Criadas</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-check-circle"></i>
+                            <h3 id="completedRoutines">0</h3>
+                            <p>Concluídas Hoje</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-clock"></i>
+                            <h3 id="totalHours">0</h3>
+                            <p>Horas Agendadas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel calendar-container">
+                    <h2><i class="fas fa-calendar"></i> Calendário de Rotinas</h2>
+                    
+                    <div class="calendar-header">
+                        <h3 id="currentMonth">Janeiro 2025</h3>
+                        <div class="calendar-nav">
+                            <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                            <button id="todayBtn">Hoje</button>
+                            <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="calendar">
+                        <!-- Dias da semana -->
+                        <div class="calendar-day">Dom</div>
+                        <div class="calendar-day">Seg</div>
+                        <div class="calendar-day">Ter</div>
+                        <div class="calendar-day">Qua</div>
+                        <div class="calendar-day">Qui</div>
+                        <div class="calendar-day">Sex</div>
+                        <div class="calendar-day">Sáb</div>
+                        
+                        <!-- Datas serão preenchidas por JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="panel" style="margin-top: 30px;">
+                    <h2><i class="fas fa-list-alt"></i> Rotinas de Hoje</h2>
+                    <div class="routine-list" id="todayRoutines">
+                        <!-- Rotinas de hoje serão preenchidas por JavaScript -->
+                        <p style="text-align: center; color: #999; padding: 20px;">Faça login para ver suas rotinas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>RotinaMaster &copy; 2025 - Organize sua vida, maximize seu tempo!</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                <i class="fas fa-lightbulb"></i> Dica: Use cores diferentes para categorizar suas rotinas.
+            </p>
+            <p style="margin-top: 5px; font-size: 0.8rem; color: #888;">
+                <i class="fas fa-database"></i> Dados salvos em tempo real com Firebase
+            </p>
+        </footer>
+    </div>
+    
+    <!-- Modal para detalhes da rotina -->
+    <div class="modal" id="routineModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <h2 id="modalTitle">Detalhes da Rotina</h2>
+            <div id="modalContent">
+                <!-- Conteúdo do modal será preenchido por JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase com SUAS credenciais
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7PZh7d5z98q1HEBXATXIikmTah052aBQ",
+            authDomain: "rotinamaster-web.firebaseapp.com",
+            projectId: "rotinamaster-web",
+            storageBucket: "rotinamaster-web.firebasestorage.app",
+            messagingSenderId: "310781531178",
+            appId: "1:310781531178:web:1cf670e948d83ff1c01f53"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Dados da aplicação
+        let routines = [];
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        let selectedColor = '#4a6fa5';
+        let isDarkTheme = false;
+        let currentUser = null;
+
+        // Elementos DOM
+        const themeToggle = document.getElementById('themeToggle');
+        const routineForm = document.getElementById('routineForm');
+        const calendarElement = document.querySelector('.calendar');
+        const currentMonthElement = document.getElementById('currentMonth');
+        const prevMonthButton = document.getElementById('prevMonth');
+        const nextMonthButton = document.getElementById('nextMonth');
+        const todayButton = document.getElementById('todayBtn');
+        const todayRoutinesElement = document.getElementById('todayRoutines');
+        const totalRoutinesElement = document.getElementById('totalRoutines');
+        const completedRoutinesElement = document.getElementById('completedRoutines');
+        const totalHoursElement = document.getElementById('totalHours');
+        const routineModal = document.getElementById('routineModal');
+        const modalClose = document.getElementById('modalClose');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const authModal = document.getElementById('authModal');
+        const authBtn = document.getElementById('authBtn');
+        const userInfo = document.getElementById('userInfo');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginFormElement = document.getElementById('loginFormElement');
+        const registerFormElement = document.getElementById('registerFormElement');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const loginBtnText = document.getElementById('loginBtnText');
+        const registerBtnText = document.getElementById('registerBtnText');
+        const loginLoading = document.getElementById('loginLoading');
+        const registerLoading = document.getElementById('registerLoading');
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            initCalendar();
+            initEventListeners();
+            initFirebaseAuth();
+            updateCalendar();
+        });
+
+        // Inicializar Firebase Authentication
+        function initFirebaseAuth() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // Usuário está logado
+                    currentUser = user;
+                    updateUIForUser(user);
+                    loadUserRoutines();
+                } else {
+                    // Usuário não está logado
+                    currentUser = null;
+                    updateUIForGuest();
+                    routines = [];
+                    updateTodayRoutines();
+                    updateStatistics();
+                    updateCalendar();
+                }
+            });
+        }
+
+        // Atualizar UI para usuário logado
+        function updateUIForUser(user) {
+            authBtn.textContent = 'Sair';
+            authBtn.className = 'btn btn-secondary btn-small';
+            
+            // Atualizar informações do usuário
+            const displayName = user.displayName || user.email.split('@')[0];
+            userName.textContent = displayName;
+            userAvatar.textContent = displayName.charAt(0).toUpperCase();
+            userAvatar.style.backgroundColor = getRandomColor();
+            
+            // Mostrar/ocultar elementos
+            userInfo.classList.remove('hidden');
+            document.querySelector('.routine-form').classList.remove('hidden');
+            document.querySelector('.stats-container').parentElement.classList.remove('hidden');
+        }
+
+        // Atualizar UI para visitante
+        function updateUIForGuest() {
+            authBtn.textContent = 'Entrar';
+            authBtn.className = 'btn btn-primary btn-small';
+            userName.textContent = 'Visitante';
+            userAvatar.textContent = '?';
+            userAvatar.style.backgroundColor = '#4a6fa5';
+            
+            // Mostrar/ocultar elementos
+            userInfo.classList.add('hidden');
+            document.querySelector('.routine-form').classList.add('hidden');
+            document.querySelector('.stats-container').parentElement.classList.add('hidden');
+            
+            todayRoutinesElement.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Faça login para ver suas rotinas.</p>';
+        }
+
+        // Gerar cor aleatória
+        function getRandomColor() {
+            const colors = ['#4a6fa5', '#6b9ac4', '#97d8c4', '#f39c12', '#e74c3c', '#9b59b6'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Carregar rotinas do usuário
+        function loadUserRoutines() {
+            if (!currentUser) return;
+            
+            db.collection('routines')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('date', 'desc')
+                .onSnapshot(snapshot => {
+                    routines = [];
+                    snapshot.forEach(doc => {
+                        const routine = doc.data();
+                        routine.id = doc.id;
+                        routines.push(routine);
+                    });
+                    
+                    updateTodayRoutines();
+                    updateStatistics();
+                    updateCalendar();
+                }, error => {
+                    console.error('Erro ao carregar rotinas:', error);
+                    alert('Erro ao carregar rotinas. Verifique sua conexão.');
+                });
+        }
+
+        // Inicializar tema
+        function initTheme() {
+            const savedTheme = localStorage.getItem('routineTheme');
+            if (savedTheme === 'dark') {
+                enableDarkTheme();
+            }
+            
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // Alternar tema claro/escuro
+        function toggleTheme() {
+            if (isDarkTheme) {
+                disableDarkTheme();
+            } else {
+                enableDarkTheme();
+            }
+        }
+
+        function enableDarkTheme() {
+            document.body.classList.remove('light-theme');
+            document.body.classList.add('dark-theme');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            isDarkTheme = true;
+            localStorage.setItem('routineTheme', 'dark');
+        }
+
+        function disableDarkTheme() {
+            document.body.classList.remove('dark-theme');
+            document.body.classList.add('light-theme');
+            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            isDarkTheme = false;
+            localStorage.setItem('routineTheme', 'light');
+        }
+
+        // Inicializar calendário
+        function initCalendar() {
+            updateCalendar();
+            
+            prevMonthButton.addEventListener('click', () => {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                updateCalendar();
+            });
+            
+            nextMonthButton.addEventListener('click', () => {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                updateCalendar();
+            });
+            
+            todayButton.addEventListener('click', () => {
+                currentDate = new Date();
+                currentMonth = currentDate.getMonth();
+                currentYear = currentDate.getFullYear();
+                updateCalendar();
+            });
+        }
+
+        // Atualizar calendário
+        function updateCalendar() {
+            const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                               "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            // Atualizar para 2025
+            currentMonthElement.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+            
+            // Limpar calendário
+            while (calendarElement.children.length > 7) {
+                calendarElement.removeChild(calendarElement.lastChild);
+            }
+            
+            // Primeiro dia do mês
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            // Último dia do mês
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            // Dia da semana do primeiro dia (0 = Domingo, 1 = Segunda, etc.)
+            const firstDayIndex = firstDay.getDay();
+            // Total de dias no mês
+            const daysInMonth = lastDay.getDate();
+            
+            // Dias em branco antes do primeiro dia
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyDiv = document.createElement('div');
+                calendarElement.appendChild(emptyDiv);
+            }
+            
+            // Dias do mês
+            const today = new Date();
+            const isCurrentMonth = today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateElement = document.createElement('div');
+                dateElement.className = 'calendar-date';
+                
+                // Destacar o dia atual
+                if (isCurrentMonth && day === today.getDate()) {
+                    dateElement.classList.add('active');
+                }
+                
+                dateElement.innerHTML = `
+                    <div class="date-number">${day}</div>
+                    <div class="event-indicator" id="indicator-${day}"></div>
+                `;
+                
+                // Verificar se há rotinas neste dia
+                const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const dayRoutines = routines.filter(routine => {
+                    return routine.date === dateStr;
+                });
+                
+                if (dayRoutines.length > 0) {
+                    // Encontrar a cor mais comum para este dia
+                    const colorCount = {};
+                    dayRoutines.forEach(routine => {
+                        colorCount[routine.color] = (colorCount[routine.color] || 0) + 1;
+                    });
+                    
+                    const mostCommonColor = Object.keys(colorCount).reduce((a, b) => 
+                        colorCount[a] > colorCount[b] ? a : b
+                    );
+                    
+                    document.getElementById(`indicator-${day}`).style.backgroundColor = mostCommonColor;
+                }
+                
+                // Adicionar evento de clique
+                dateElement.addEventListener('click', () => {
+                    showRoutinesForDate(dateStr, day);
+                });
+                
+                calendarElement.appendChild(dateElement);
+            }
+        }
+
+        // Inicializar listeners de eventos
+        function initEventListeners() {
+            // Formulário de rotina
+            routineForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                addRoutine();
+            });
+            
+            // Seletores de cor
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedColor = this.getAttribute('data-color');
+                });
+            });
+            
+            // Fechar modal
+            modalClose.addEventListener('click', () => {
+                routineModal.classList.remove('active');
+            });
+            
+            // Fechar modal clicando fora
+            window.addEventListener('click', (e) => {
+                if (e.target === routineModal) {
+                    routineModal.classList.remove('active');
+                }
+                if (e.target === authModal) {
+                    authModal.classList.remove('active');
+                }
+            });
+            
+            // Botão de autenticação
+            authBtn.addEventListener('click', () => {
+                if (currentUser) {
+                    // Logout
+                    auth.signOut();
+                } else {
+                    // Mostrar modal de login
+                    authModal.classList.add('active');
+                }
+            });
+            
+            // Tabs de autenticação
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    
+                    // Atualizar tabs ativas
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Mostrar formulário correto
+                    if (tabName === 'login') {
+                        loginForm.classList.add('active');
+                        registerForm.classList.remove('active');
+                    } else {
+                        loginForm.classList.remove('active');
+                        registerForm.classList.add('active');
+                    }
+                });
+            });
+            
+            // Formulário de login
+            loginFormElement.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                await loginUser(email, password);
+            });
+            
+            // Formulário de registro
+            registerFormElement.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                
+                await registerUser(name, email, password);
+            });
+        }
+
+        // Login do usuário
+        async function loginUser(email, password) {
+            try {
+                // Mostrar loading
+                loginBtnText.classList.add('hidden');
+                loginLoading.classList.remove('hidden');
+                loginBtn.disabled = true;
+                
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Usuário logado:', userCredential.user);
+                
+                // Fechar modal
+                authModal.classList.remove('active');
+                loginFormElement.reset();
+            } catch (error) {
+                console.error('Erro no login:', error);
+                alert('Erro no login: ' + error.message);
+            } finally {
+                // Esconder loading
+                loginBtnText.classList.remove('hidden');
+                loginLoading.classList.add('hidden');
+                loginBtn.disabled = false;
+            }
+        }
+
+        // Registro de usuário
+        async function registerUser(name, email, password) {
+            try {
+                // Mostrar loading
+                registerBtnText.classList.add('hidden');
+                registerLoading.classList.remove('hidden');
+                registerBtn.disabled = true;
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Atualizar nome do usuário
+                await userCredential.user.updateProfile({
+                    displayName: name
+                });
+                
+                console.log('Usuário registrado:', userCredential.user);
+                
+                // Fechar modal
+                authModal.classList.remove('active');
+                registerFormElement.reset();
+            } catch (error) {
+                console.error('Erro no registro:', error);
+                alert('Erro no registro: ' + error.message);
+            } finally {
+                // Esconder loading
+                registerBtnText.classList.remove('hidden');
+                registerLoading.classList.add('hidden');
+                registerBtn.disabled = false;
+            }
+        }
+
+        // Adicionar rotina
+        async function addRoutine() {
+            if (!currentUser) {
+                alert('Você precisa fazer login para criar rotinas!');
+                authModal.classList.add('active');
+                return;
+            }
+            
+            const name = document.getElementById('routineName').value;
+            const type = document.getElementById('routineType').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const description = document.getElementById('routineDescription').value;
+            
+            // Criar objeto de rotina
+            const routine = {
+                userId: currentUser.uid,
+                name: name,
+                type: type,
+                startTime: startTime,
+                endTime: endTime,
+                description: description,
+                color: selectedColor,
+                date: `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${currentDate.getDate().toString().padStart(2, '0')}`,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                // Salvar no Firebase
+                await db.collection('routines').add(routine);
+                
+                // Limpar formulário
+                routineForm.reset();
+                
+                // Resetar cor selecionada
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+                colorOptions[0].classList.add('active');
+                selectedColor = '#4a6fa5';
+                
+                // Mostrar mensagem de sucesso
+                alert('Rotina adicionada com sucesso!');
+            } catch (error) {
+                console.error('Erro ao salvar rotina:', error);
+                alert('Erro ao salvar rotina. Tente novamente.');
+            }
+        }
+
+        // Atualizar estatísticas
+        function updateStatistics() {
+            totalRoutinesElement.textContent = routines.length;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const completedToday = routines.filter(r => r.date === today && r.completed).length;
+            completedRoutinesElement.textContent = completedToday;
+            
+            // Calcular total de horas agendadas
+            let totalMinutes = 0;
+            routines.forEach(routine => {
+                const start = routine.startTime.split(':');
+                const end = routine.endTime.split(':');
+                const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+                const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+                totalMinutes += (endMinutes - startMinutes);
+            });
+            
+            const totalHours = Math.round(totalMinutes / 60);
+            totalHoursElement.textContent = totalHours;
+        }
+
+        // Atualizar rotinas de hoje
+        function updateTodayRoutines() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayRoutines = routines.filter(routine => routine.date === today);
+            
+            if (todayRoutines.length === 0) {
+                todayRoutinesElement.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Nenhuma rotina agendada para hoje.</p>';
+                return;
+            }
+            
+            todayRoutinesElement.innerHTML = '';
+            
+            todayRoutines.forEach(routine => {
+                const routineElement = document.createElement('div');
+                routineElement.className = 'routine-item';
+                routineElement.style.borderLeftColor = routine.color;
+                
+                routineElement.innerHTML = `
+                    <div class="routine-color" style="background-color: ${routine.color}"></div>
+                    <div class="routine-details">
+                        <h4>${routine.name}</h4>
+                        <div class="routine-time">${routine.startTime} - ${routine.endTime}</div>
+                    </div>
+                    <div class="routine-actions">
+                        <button class="complete-btn" data-id="${routine.id}">
+                            <i class="fas ${routine.completed ? 'fa-undo' : 'fa-check'}"></i>
+                        </button>
+                        <button class="delete-btn" data-id="${routine.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                todayRoutinesElement.appendChild(routineElement);
+            });
+            
+            // Adicionar eventos aos botões
+            document.querySelectorAll('.complete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    toggleRoutineCompletion(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    deleteRoutine(id);
+                });
+            });
+        }
+
+        // Alternar conclusão da rotina
+        async function toggleRoutineCompletion(id) {
+            try {
+                const routineRef = db.collection('routines').doc(id);
+                const routine = routines.find(r => r.id === id);
+                
+                if (routine) {
+                    await routineRef.update({
+                        completed: !routine.completed
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar rotina:', error);
+                alert('Erro ao atualizar rotina.');
+            }
+        }
+
+        // Excluir rotina
+        async function deleteRoutine(id) {
+            if (confirm('Tem certeza que deseja excluir esta rotina?')) {
+                try {
+                    await db.collection('routines').doc(id).delete();
+                } catch (error) {
+                    console.error('Erro ao excluir rotina:', error);
+                    alert('Erro ao excluir rotina.');
+                }
+            }
+        }
+
+        // Mostrar rotinas para uma data específica
+        function showRoutinesForDate(dateStr, day) {
+            const dateRoutines = routines.filter(routine => routine.date === dateStr);
+            const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                               "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            document.getElementById('modalTitle').textContent = `Rotinas para ${day} de ${monthNames[currentMonth]}`;
+            
+            if (dateRoutines.length === 0) {
+                document.getElementById('modalContent').innerHTML = `
+                    <p>Nenhuma rotina agendada para esta data.</p>
+                    <button class="btn btn-primary" style="margin-top: 20px;" onclick="addRoutineForDate('${dateStr}')">
+                        <i class="fas fa-plus"></i> Adicionar Rotina
+                    </button>
+                `;
+            } else {
+                let content = '<div style="display: flex; flex-direction: column; gap: 15px;">';
+                
+                dateRoutines.forEach(routine => {
+                    content += `
+                        <div class="routine-item" style="border-left-color: ${routine.color}">
+                            <div class="routine-color" style="background-color: ${routine.color}"></div>
+                            <div class="routine-details">
+                                <h4>${routine.name}</h4>
+                                <div class="routine-time">${routine.startTime} - ${routine.endTime}</div>
+                                <p style="margin-top: 5px; font-size: 0.9rem;">${routine.description}</p>
+                            </div>
+                            <div class="routine-actions">
+                                <button onclick="toggleRoutineCompletion('${routine.id}')" style="background: none; border: none; color: ${routine.color}; cursor: pointer;">
+                                    <i class="fas ${routine.completed ? 'fa-undo' : 'fa-check'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                content += `
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="addRoutineForDate('${dateStr}')">
+                        <i class="fas fa-plus"></i> Adicionar Nova Rotina
+                    </button>
+                `;
+                
+                document.getElementById('modalContent').innerHTML = content;
+            }
+            
+            routineModal.classList.add('active');
+        }
+
+        // Função global para adicionar rotina para uma data específica
+        window.addRoutineForDate = function(dateStr) {
+            // Fechar modal
+            routineModal.classList.remove('active');
+            
+            // Definir a data no formulário
+            const date = new Date(dateStr);
+            currentDate = date;
+            currentMonth = date.getMonth();
+            currentYear = date.getFullYear();
+            
+            // Atualizar calendário
+            updateCalendar();
+            
+            // Rolar para o formulário
+            document.getElementById('routineName').focus();
+            
+            // Mostrar mensagem
+            setTimeout(() => {
+                alert(`Agora você pode criar uma rotina para ${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}. Preencha o formulário acima.`);
+            }, 300);
+        };
+    </script>
+</body>
+</html>
